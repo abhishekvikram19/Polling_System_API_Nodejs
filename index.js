@@ -1,20 +1,31 @@
-//Require the express module to create a new express app
 const express = require('express');
-//Create a new instance of the express app
+const mongoose = require('mongoose');
+const dotenv = require('dotenv').config();
+const port = process.env.PORT || 3000;
+const cors = require('cors');
+const path = require('path');
 const app = express();
-const PORT = 8000;
-const db = require('./config/mongoose')
-const bodyParser = require('body-parser');
+const polls = require('./routes/poll');
 
-app.use(bodyParser.urlencoded({ extended: false }));
+mongoose
+  .connect('mongodb://localhost/live-poll-application', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+  })
+  .then(() => console.log('connected to mongoDb'))
+  .catch(err => console.log('Error occured: ', err));
 
-//Mount the routes from the routes module using the '/' path
-app.use('/',require('./routes'))
+app.use(cors());
+app.set('view engine', 'ejs');
+app.use('/static/', express.static(path.join(__dirname + '/static')));
+app.use('/', polls);
+app.use(express.json());
 
-app.listen(PORT, (err)=>{
-    if(err){
-        console.log(err)
-        return;
-    }
-    console.log("server running at: ", PORT)
-})
+app.get('*', (req, res) => {
+  res.status(404).render('notfound');
+});
+
+app.listen(port, () => {
+  console.log(`listening on port ${port}...`);
+});
